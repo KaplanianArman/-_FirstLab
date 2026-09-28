@@ -1,5 +1,8 @@
 #include <iostream>
 
+const int MAXN = 10'000'000;
+uint32_t arr[MAXN];
+
 uint32_t cur = 0;  // беззнаковое 32-битное число
 
 // Генератор 24-битного числа
@@ -15,65 +18,73 @@ uint32_t nextRand32(uint32_t a, uint32_t b) {
     return (x << 8) ^ y;     // число от 0 до 2^32 - 1
 }
 
-uint32_t* GetMedian(uint32_t* a, uint32_t* b, uint32_t* c) {
-    uint32_t a_val = *a;
-    uint32_t b_val = *b;
-    uint32_t c_val = *c;
-    if (a_val > b_val) {
-        if (b_val > c_val) {//a > b > c
-            return b;
+struct partition {
+    int ind_left;
+    int ind_right;
+};
+
+int GetMedianInd(int l, int mid, int r) {
+    uint32_t a = arr[l], b = arr[mid], c = arr[r];
+    if (a > b) {
+        if (b > c) {//a > b > c
+            return mid;
         }
-        if (a_val > c_val) {//a > c >= b
-            return c;
+        if (a > c) {//a > c >= b
+            return r;
         }
-        else {//c >= a > b;
-            return a;
+        else {//c >= a > b
+            return l;
         }
     }
     else {
-        if (a_val > c_val) {//b >= a > c
-            return a;
+        if (a > c) {//b >= a > c 
+            return l;
         }
-        else if (b_val > c_val) {//b > c >= a
-            return c;
+        if (b > c) {//b > c >= a
+            return r;
         }
         else {//c >= b >= a
-            return b;
+            return mid;
         }
     }
 }
 
-uint32_t* LomutoPartition(uint32_t* beg, uint32_t* end) {
-    uint32_t sz = end - beg;
-    uint32_t mid = sz / 2;
-    uint32_t* mid_ptr = beg + mid;
-    uint32_t* pivot_ptr = GetMedian(beg, mid_ptr, end - 1);
-    uint32_t pivot = *pivot_ptr;
-    std::swap(*pivot_ptr, *(end - 1));
-
-    uint32_t* i = beg - 1;
-    while (beg + 1 < end) {
-        if (*beg < pivot) {
+partition LomutoPartition(int l, int r) {
+    int mid = (l + r) / 2;
+    int pivot_ind = GetMedianInd(l, mid, r - 1);
+    uint32_t pivot = arr[pivot_ind];
+    std::swap(arr[pivot_ind], arr[r - 1]);
+    int i = l;
+    for (int j = l; j < r - 1; ++j) {
+        if (arr[j] < pivot) {
+            std::swap(arr[j], arr[i]);
             ++i;
-            std::swap(*i, *beg);
         }
-        ++beg;
     }
-    std::swap(*i, *(end - 1));
-    return i;
+    std::swap(arr[i], arr[r - 1]);
+    int j = i + 1;
+    for (int k = j; k < r; ++k) {
+        if (arr[k] == pivot) {
+            std::swap(arr[j], arr[k]);
+            ++j;
+        }
+    }
+    return {i, j - 1};
 }
 
-int FindIndexK(uint32_t* beg, uint32_t* end, uint32_t k) {
-    uint32_t* q = LomutoPartition(beg, end);
-    uint32_t cnt_left = q - beg - 1;
-    if (cnt_left + 1 == k) {
-        return *q;
-    }
-    if (cnt_left > k) {
-        return FindIndexK(beg, q, k);
-    }
-    return FindIndexK(q + 1, end, k);
+uint32_t GetFirstK(int l, int r, uint32_t k) {
+    partition q = LomutoPartition(l, r);
+    int ind_left = q.ind_left, ind_right = q.ind_right;
+
+    int cnt_left = ind_left - l;
+    int cnt_left_and_mid = ind_right + 1 - l;
+
+    if (cnt_left >= k) return GetFirstK(l, ind_left, k);
+    else if (cnt_left_and_mid >= k) return arr[ind_left];
+    return GetFirstK(ind_right + 1, r, k - cnt_left_and_mid);
 }
+
+
 
 int main() {
     std::ios::sync_with_stdio(false);
@@ -82,20 +93,10 @@ int main() {
     uint32_t n, k, a, b;
     std::cin >> n >> k >> a >> b;
 
-    uint32_t arr[n];
-
     for (uint32_t i = 0; i < n; i++) {
         arr[i] = nextRand32(a, b);  // генерируем i-й элемент
     }
-
-    uint32_t *beg = arr;
-    uint32_t *end = beg + n;
-    for (int i = 0; i < n; ++i) std::cout << arr[i] << ' ';
-    std::cout << '\n';
-    std::cout << FindIndexK(beg, end, k) << '\n';
-    /*
-    12 130926 3941054950 2013898548 197852696 2753287507 2013898548
-    12 130926 197852696 2013898548 2013898548 2753287507 3941054950
-    */
+    
+    std::cout << GetFirstK(0, n, k) << '\n';
     return 0;
 }
