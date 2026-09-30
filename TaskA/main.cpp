@@ -13,7 +13,7 @@ int main() {
         int j = i - 1;
         while (j >= 0 && ++ans && mas[j] > cur) {
             mas[j + 1] = mas[j];
-            j--;
+            --j;
         }
         ++j;
         mas[j] = cur;
