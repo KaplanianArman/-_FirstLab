@@ -50,6 +50,31 @@ void LSD(int D) {
     for (int i = 0; i < n; ++i) ans += 1LL * (i + 1) * arr[i];
 }
 
+int CNT_BYTE[256];
+void LSD_BYTE(int D) {
+    for (int d = 1; d <= D; ++d) {
+        for (int i = 0; i < n; ++i) {
+            int cur_byte = ((arr[i] >> ((d - 1) * 8)) & 255);
+            CNT_BYTE[cur_byte]++;
+        }
+
+        for (int i = 1; i <= 255; ++i) CNT_BYTE[i] += CNT_BYTE[i - 1];
+
+        for (int i = n - 1; i >= 0; --i) {
+            int cur_byte = ((arr[i] >> ((d - 1) * 8)) & 255);
+            int pos = CNT_BYTE[cur_byte] - 1;
+            cur_mas[pos] = arr[i];
+            CNT_BYTE[cur_byte]--;
+        }
+
+        for (int i = 0; i < n; ++i) arr[i] = cur_mas[i];
+
+        for (int i = 0; i <= 255; ++i) CNT_BYTE[i] = 0;
+    }
+
+    for (int i = 0; i < n; ++i) ans += 1LL * (i + 1) * arr[i];
+}
+
 int main() {
     std::ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
@@ -63,17 +88,14 @@ int main() {
     uint32_t a, b;
     std::cin >> t >> n >> a >> b;
     while (t--) {
-        uint32_t mx = 0;
         for (int i = 0; i < n; ++i) {
             arr[i] = nextRand32(a, b);
-            mx = std::max(mx, arr[i]);
         }
         
         ans = 0;
 
-        int D = 1;
-        while (D < 10 && mx / POW10[D] != 0) D++;
-        LSD(D);
+        int D = 4;
+        LSD_BYTE(D);
         std::cout << ans << '\n';
     }
     return 0;
